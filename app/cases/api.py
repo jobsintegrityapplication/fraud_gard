@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from ..db import conn
-from .service import create_case, get_case, list_cases, record_decision
+from .service import add_evidence, create_case, get_case, list_cases, record_decision, write_case_audit
 from .states import DECISIONS, InvalidCaseTransition
 from ..security.audit import record_event
 from ..security.auth import Principal, require_roles
@@ -99,16 +99,45 @@ def api_from_alert(alert_id: int, principal: Principal = Depends(require_roles('
     if not a:
         raise HTTPException(404, 'Alert not found')
     alert = dict(a)
+    title = f'Alert {alert_id}'
+    evidence = {
+        'evidence_type': 'ALERT',
+        'source': 'scoring',
+        'payload': {
+            'alert_id': alert.get('id'),
+            'risk': alert.get('risk'),
+        },
+    }
+    # Make retries safe and repair a row left behind if a previous request
+    # failed after the case INSERT but before evidence/audit writes completed.
+    c = conn()
+    existing = c.execute(
+        'SELECT id FROM cases WHERE transaction_id IS ? AND title = ? ORDER BY created_at LIMIT 1',
+        (alert.get('transaction_id'), title),
+    ).fetchone()
+    if existing:
+        case_id = existing['id']
+        c.close()
+        current = get_case(case_id)
+        has_alert_evidence = any(
+            item.get('evidence_type') == 'ALERT'
+            and item.get('payload', {}).get('alert_id') == alert_id
+            for item in (current or {}).get('evidence', [])
+        )
+        if not has_alert_evidence:
+            add_evidence(case_id, [evidence], principal.actor_id, bump=False)
+        audit_events = (get_case(case_id) or {}).get('audit_history', [])
+        if not any(event.get('action') == 'CASE_CREATED' for event in audit_events):
+            write_case_audit(
+                case_id, principal.actor_id, 'CASE_CREATED',
+                to_status=(current or {}).get('status', 'OPEN'), evidence_version=1,
+                detail={'transaction_id': alert.get('transaction_id'), 'alert_id': alert_id},
+            )
+        return get_case(case_id)
+    c.close()
     return create_case(
         transaction_id=alert.get('transaction_id'),
-        title=f'Alert {alert_id}',
-        evidence=[{
-            'evidence_type': 'ALERT',
-            'source': 'scoring',
-            'payload': {
-                'alert_id': alert.get('id'),
-                'risk': alert.get('risk'),
-            },
-        }],
+        title=title,
+        evidence=[evidence],
         actor=principal.actor_id,
     )

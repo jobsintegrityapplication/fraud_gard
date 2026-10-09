@@ -2,7 +2,7 @@
 
 Local fraud management MVP with an Angular Material console, FastAPI API,
 model scoring/training workflows, PostgreSQL canonical schema, MLflow tracking,
-MinIO artifact storage, and Prometheus/Grafana observability.
+RustFS S3-compatible artifact storage, and Prometheus/Grafana observability.
 
 ## Run the complete stack on Windows
 
@@ -84,7 +84,7 @@ backend.
 | `frontend` | Angular Material console, Nginx SPA hosting and API proxy | `http://localhost:8080` |
 | `backend` | FastAPI, model APIs, drift monitoring and Prometheus metrics | `http://localhost:8000` |
 | `postgres` | Canonical SQLAlchemy schema and MLflow metadata database | `localhost:5432` |
-| `minio` | S3-compatible MLflow artifact storage | `http://localhost:9001` |
+| `minio` | RustFS S3-compatible MLflow artifact storage and console | `http://localhost:9001` |
 | `mlflow` | Experiment tracking UI and API | `http://localhost:5000` |
 | `prometheus` | Metrics scraper | `http://localhost:9090` |
 | `grafana` | Provisioned observability dashboard | `http://localhost:3000` |

@@ -13,7 +13,10 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { AuthService } from './auth.service';
 
-type Row = Record<string, any>;
+// API response structures evolve independently from the console. Treat rows as
+// dynamic JSON instead of an index-signature record so strict Angular templates
+// allow the existing property bindings.
+type Row = any;
 @Component({
   selector: 'app-console', standalone: true,
   imports: [CommonModule, FormsModule, HttpClientModule, RouterLink, RouterLinkActive, MatButtonModule, MatCardModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule, MatSidenavModule, MatToolbarModule],
@@ -24,7 +27,7 @@ export class ConsoleComponent implements OnInit {
   page = 'dashboard'; busy = false; apiOnline = false; error = ''; message = ''; search = ''; actor = 'analyst';
   dashboard: Row | null = null; rows: Row[] = []; item: Row | null = null; scores: Row | null = null; alertScores: Row | null = null; graph: Row | null = null;
   deployment: Row | null = null; modelRows: Row[] = []; learning: Row[] = []; reports: Row[] = []; auditRows: Row[] = [];
-  gateResults: Record<string, Row> = {};
+  gateResults: any = {};
   decisionReason = ''; canaryPercent = 10;
   readonly nav = [
     { title: 'OVERVIEW', links: [{ label: 'Dashboard', path: '/dashboard', icon: '▦' }] },

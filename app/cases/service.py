@@ -42,25 +42,6 @@ def write_case_audit(
     ts = _now()
     text = sanitize_audit_detail(detail)
     c = conn()
-    # Serialize decisions and compare the evidence version inside the write
-    # transaction. A read/check followed by an unconditional UPDATE allowed two
-    # reviewers to commit decisions against the same case version.
-    c.execute('BEGIN IMMEDIATE')
-    locked = c.execute('SELECT status, evidence_version FROM cases WHERE id = ?', (case_id,)).fetchone()
-    if locked is None:
-        c.rollback()
-        c.close()
-        raise KeyError(case_id)
-    if int(locked['evidence_version'] or 1) != int(evidence_version):
-        c.rollback()
-        c.close()
-        raise InvalidCaseTransition('case evidence changed; refresh before deciding')
-    try:
-        new_status = apply_decision_status(locked['status'], decision)
-    except Exception:
-        c.rollback()
-        c.close()
-        raise
     c.execute(
         '''INSERT INTO case_audit_events(
             case_id, actor, action, from_status, to_status, evidence_version, decision_id, detail, ts

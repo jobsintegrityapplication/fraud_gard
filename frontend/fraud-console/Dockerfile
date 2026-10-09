@@ -1,7 +1,10 @@
 FROM node:20-alpine AS build
 WORKDIR /workspace
 COPY package.json package-lock.json ./
-RUN npm install --no-audit --no-fund
+# The checked-in lockfile is currently missing Angular Material/CDK package
+# entries declared by package.json. Resolve the declared dependency manifest
+# during the image build rather than silently producing a partial node_modules.
+RUN npm install --no-audit --no-fund --package-lock=false
 COPY . .
 RUN npm run build -- --configuration production
 
