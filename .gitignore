@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.env.local
+models/*.joblib
+models/supervised/
+*.db
+alembic_tmp.db
+data/*.csv
+data/raw/*
+!data/raw/.gitkeep
+data/generated/*
+!data/generated/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+frontend/dist/

@@ -1,0 +1,23 @@
+{
+  "id": null,
+  "uid": "handset-fraud-observability",
+  "title": "Handset Fraud Platform Observability",
+  "tags": ["fraud", "platform", "observability"],
+  "timezone": "browser",
+  "schemaVersion": 41,
+  "version": 1,
+  "refresh": "15s",
+  "time": { "from": "now-6h", "to": "now" },
+  "panels": [
+    { "id": 1, "title": "API requests / second", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }, "targets": [{ "expr": "sum by (route, method) (rate(api_requests_total[5m]))", "legendFormat": "{{method}} {{route}}", "refId": "A" }] },
+    { "id": 2, "title": "API p95 latency", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }, "targets": [{ "expr": "histogram_quantile(0.95, sum by (le, route) (rate(api_request_duration_seconds_bucket[5m])))", "legendFormat": "{{route}}", "refId": "A" }] },
+    { "id": 3, "title": "API errors / second", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 }, "targets": [{ "expr": "sum by (route, status) (rate(api_errors_total[5m]))", "legendFormat": "{{status}} {{route}}", "refId": "A" }] },
+    { "id": 4, "title": "Fraud alerts and anomalies", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 }, "targets": [{ "expr": "sum by (risk_level) (rate(fraud_alerts_total[5m]))", "legendFormat": "alerts {{risk_level}}", "refId": "A" }, { "expr": "rate(anomalies_detected_total[5m])", "legendFormat": "anomalies", "refId": "B" }] },
+    { "id": 5, "title": "Model quality by version / split", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 }, "targets": [{ "expr": "fraud_model_precision", "legendFormat": "precision {{model_version}} {{split}}", "refId": "A" }, { "expr": "fraud_model_recall", "legendFormat": "recall {{model_version}} {{split}}", "refId": "B" }, { "expr": "fraud_model_pr_auc", "legendFormat": "PR-AUC {{model_version}} {{split}}", "refId": "C" }] },
+    { "id": 6, "title": "False positive / negative rates", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 }, "targets": [{ "expr": "fraud_model_false_positive_rate", "legendFormat": "FPR {{model_version}} {{split}}", "refId": "A" }, { "expr": "fraud_model_false_negative_rate", "legendFormat": "FNR {{model_version}} {{split}}", "refId": "B" }] },
+    { "id": 7, "title": "Prediction score distribution", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 }, "targets": [{ "expr": "sum by (model, score_type, le) (rate(model_score_distribution_bucket[5m]))", "legendFormat": "{{model}} {{score_type}} <= {{le}}", "refId": "A" }] },
+    { "id": 8, "title": "Feature drift", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 }, "targets": [{ "expr": "fraud_model_feature_drift_stddev", "legendFormat": "model shift {{feature}} / {{model_version}}", "refId": "A" }, { "expr": "fraud_data_drift_psi", "legendFormat": "PSI {{feature}}", "refId": "B" }] },
+    { "id": 9, "title": "Training and agent workflows", "type": "timeseries", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 }, "targets": [{ "expr": "histogram_quantile(0.95, sum by (le, model) (rate(model_training_duration_seconds_bucket[15m])))", "legendFormat": "training p95 {{model}}", "refId": "A" }, { "expr": "histogram_quantile(0.95, sum by (le) (rate(agent_workflow_duration_seconds_bucket[15m])))", "legendFormat": "agent p95", "refId": "B" }] },
+    { "id": 10, "title": "Operational totals", "type": "stat", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 }, "targets": [{ "expr": "sum(transactions_processed_total)", "legendFormat": "transactions", "refId": "A" }, { "expr": "sum(confirmed_fraud_total)", "legendFormat": "confirmed fraud", "refId": "B" }, { "expr": "sum(model_errors_total)", "legendFormat": "model errors", "refId": "C" }, { "expr": "sum(agent_failures_total)", "legendFormat": "agent failures", "refId": "D" }] }
+  ]
+}

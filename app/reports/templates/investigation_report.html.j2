@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Fraud Investigation Report {{ report.report_version }}</title>
+  <style>
+    body { font-family: Georgia, "Times New Roman", serif; margin: 2rem; color: #1a1a1a; line-height: 1.45; }
+    h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.15rem; margin-top: 1.5rem; border-bottom: 1px solid #ccc; padding-bottom: 0.25rem; }
+    .meta { color: #444; font-size: 0.95rem; margin-bottom: 1.5rem; }
+    .claim { margin: 0.75rem 0; padding: 0.75rem; background: #f7f7f5; border-left: 3px solid #333; }
+    .claim.unavailable { border-left-color: #a67c00; background: #fff8e8; }
+    .label { font-weight: bold; }
+    .eids { font-size: 0.85rem; color: #333; margin-top: 0.35rem; }
+    .note { font-style: italic; color: #666; font-size: 0.9rem; }
+    .value { white-space: pre-wrap; word-break: break-word; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+    th, td { border: 1px solid #ccc; padding: 0.35rem 0.5rem; text-align: left; vertical-align: top; }
+    .banner { background: #111; color: #fff; padding: 0.75rem 1rem; margin-bottom: 1rem; }
+    .banner span { opacity: 0.85; }
+  </style>
+</head>
+<body>
+  <div class="banner">
+    Fraud Investigation Report
+    <span> — {{ report.report_version }}</span>
+  </div>
+  <h1>Case {{ report.case_id }}</h1>
+  <div class="meta">
+    Transaction: {{ report.transaction_id }}<br/>
+    Generated: {{ report.generated_at }}<br/>
+    Invented content: {{ report.invented }}
+  </div>
+
+  <p class="note">Every material claim cites evidence IDs. Missing evidence is marked {{ unavailable_token }} and is never fabricated.</p>
+
+  {% for claim in report.claims %}
+  <div class="claim {% if claim.status != 'OK' %}unavailable{% endif %}">
+    <div class="label">{{ claim.label }}</div>
+    <div class="value">
+      {% if claim.status != 'OK' or claim.value == unavailable_token %}
+        <strong>{{ unavailable_token }}</strong>
+        {% if claim.note %}<div class="note">{{ claim.note }}</div>{% endif %}
+      {% else %}
+        {% if claim.field == 'transaction' and claim.value is mapping %}
+          <table>
+            {% for k, v in claim.value.items() %}
+            <tr><th>{{ k }}</th><td>{{ v }}</td></tr>
+            {% endfor %}
+          </table>
+        {% elif claim.field in ['timeline', 'linked_entities', 'evidence', 'pattern_matches', 'audit_references'] and claim.value is sequence %}
+          {% if claim.value|length == 0 %}
+            <em>(none observed)</em>
+          {% else %}
+            <table>
+              <tr>
+                {% for k in claim.value[0].keys() %}
+                <th>{{ k }}</th>
+                {% endfor %}
+              </tr>
+              {% for row in claim.value %}
+              <tr>
+                {% for k, v in row.items() %}
+                <td>{{ v }}</td>
+                {% endfor %}
+              </tr>
+              {% endfor %}
+            </table>
+          {% endif %}
+        {% elif claim.value is mapping %}
+          <table>
+            {% for k, v in claim.value.items() %}
+            <tr><th>{{ k }}</th><td>{{ v }}</td></tr>
+            {% endfor %}
+          </table>
+        {% else %}
+          {{ claim.value }}
+        {% endif %}
+      {% endif %}
+    </div>
+    <div class="eids">
+      Evidence IDs:
+      {% if claim.evidence_ids %}
+        {{ claim.evidence_ids | join(', ') }}
+      {% else %}
+        {{ unavailable_token }}
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+
+  {% if report.unavailable %}
+  <h2>Unavailable evidence log</h2>
+  <ul>
+    {% for u in report.unavailable %}
+    <li>{{ u.kind }}: {{ u.reason }} ({{ unavailable_token }})</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</body>
+</html>
